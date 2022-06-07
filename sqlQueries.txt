@@ -1,0 +1,137 @@
+SELECT * FROM Data1;
+
+SELECT * FROM Data2;
+
+-- number of rows
+SELECT COUNT(*) FROM Data1;
+SELECT COUNT(1) FROM Data1;
+SELECT COUNT(-13) FROM Data1;
+SELECT COUNT('it is always gonna be number of rows unless it is column_name') FROM Data1;
+
+
+-- generate the data from 2 different states - Jharkhand and Bihar
+SELECT * 
+FROM Data1
+WHERE State = 'Jharkhand' OR State = 'Bihar';
+
+SELECT * 
+FROM Data1
+WHERE State in ('Jharkhand', 'Bihar');
+
+
+-- find population of India
+SELECT SUM(Population) AS 'Total Population'
+FROM Data2;
+
+
+-- what was the average growth in population from the previous census my country carried out?
+SELECT ROUND(AVG(Growth)*100, 2) as 'Average Growth (%)'
+FROM Data1;
+
+
+-- what was the average growth in population in Gujarat from the previous census my country carried out?
+SELECT ROUND(AVG(Growth)*100, 2) as 'Average Growth in Gujarat (%)'
+FROM Data1
+WHERE State in ('Gujarat');
+
+
+-- what was the average growth in population in all states from the previous census my country carried out?
+SELECT State, ROUND(AVG(Growth)*100, 2) as 'avg_growth'
+FROM Data1
+GROUP BY State;
+
+
+-- which state has the second least average growth in population in all states from the previous census my country carried out?
+SELECT State, ROUND(AVG(Growth)*100, 2) AS 'avg_growth'
+FROM Data1
+GROUP BY State
+ORDER BY avg_growth
+LIMIT 1, 1;  -- second least average growth is of the State 'Kerala'
+
+
+-- what was the average sex ratio in all states from the previous census my country carried out?
+SELECT State, ROUND(AVG(Sex_Ratio), 0) AS 'avg_sex_ratio'
+FROM Data1
+GROUP BY State
+ORDER BY avg_sex_ratio;
+
+
+-- what was the average literacy rate in all states from the previous census my country carried out?
+SELECT State, ROUND(AVG(Literacy), 0) AS 'avg_literacy'
+FROM Data1
+GROUP BY State
+HAVING avg_literacy > 90
+ORDER BY avg_literacy DESC;
+
+
+-- which were the top 3 states that had highest average growth in the previous census my country carried out?
+SELECT State, ROUND(AVG(Growth)*100, 2) as 'avg_growth'
+FROM Data1
+GROUP BY State
+ORDER BY avg_growth DESC
+LIMIT 3;
+
+
+-- which were the top 3 states that had lowest average growth in the previous census my country carried out?
+SELECT State, ROUND(AVG(Growth)*100, 2) as 'avg_growth'
+FROM Data1
+GROUP BY State
+ORDER BY avg_growth
+LIMIT 3;
+
+
+------------------- which were the top 3 and bottom 3 states that had highest average growth in the previous census my country carried out?
+CREATE TABLE topStates(
+State VARCHAR(255),
+avg_growth DOUBLE
+);
+
+INSERT INTO topStates
+SELECT State, ROUND(AVG(Growth)*100, 2) AS 'avg_growth'
+FROM Data1
+GROUP BY State
+ORDER BY avg_growth DESC
+LIMIT 3;
+
+SELECT *
+FROM topStates;
+
+
+CREATE TABLE bottomStates(
+State VARCHAR(255),
+avg_growth DOUBLE
+);
+
+INSERT INTO bottomStates
+SELECT State, ROUND(AVG(Growth)*100, 2) AS 'avg_growth'
+FROM Data1
+GROUP BY State
+ORDER BY avg_growth
+LIMIT 3;
+
+SELECT *
+FROM bottomStates;
+
+-- which were the top 3 and bottom 3 states that had highest average growth in the previous census my country carried out?
+SELECT *
+FROM topStates
+UNION
+SELECT *
+FROM bottomStates
+ORDER BY avg_growth;
+
+
+
+
+
+
+-- fetch all the states whose name start with the letter 'A' and ends with the letter 'h'
+SELECT DISTINCT State 
+FROM Data1
+WHERE State LIKE 'A%';
+
+
+-- fetch all the states whose name start with the letter 'A' or with the letter 'b'
+SELECT DISTINCT State 
+FROM Data1
+WHERE State LIKE 'A%' OR lower(State) LIKE 'B%';
