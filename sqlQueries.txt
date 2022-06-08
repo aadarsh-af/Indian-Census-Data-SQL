@@ -1,3 +1,6 @@
+-- These SQL Queries are performed upon the file: indian_census_data_2011.sqlite
+
+
 SELECT * FROM Data1;
 
 SELECT * FROM Data2;
@@ -135,3 +138,105 @@ WHERE State LIKE 'A%';
 SELECT DISTINCT State 
 FROM Data1
 WHERE State LIKE 'A%' OR lower(State) LIKE 'B%';
+
+
+
+
+--------------------------------- What is the number of Males and Females in every state?
+
+-- to answer that question, we'd need sex_ratio and population in one table
+-- we can join both the tables using INNER JOIN
+SELECT d1.District, d1.State, d1.Sex_Ratio, d2.Population
+FROM Data1 d1
+INNER JOIN Data2 d2
+ON d1.District = d2.District;
+
+-- Now, as we know, sex_ratio = count(female)/count(male) & population = count(female) + count(male)
+-- So, count(male) = Population/(Sex_Ratio + 1)
+
+-- Number of Males and Females in every District
+SELECT gender.District, ROUND(SUM(gender.Population/(gender.sex_ratio + 1)), 0) AS Males, ROUND(SUM(gender.sex_ratio * gender.Population/(gender.sex_ratio + 1)), 0) AS Females
+FROM (SELECT d1.District, d1.State, d1.Sex_Ratio/1000 AS sex_ratio, d2.Population
+FROM Data1 d1
+INNER JOIN Data2 d2
+ON d1.District = d2.District) gender
+GROUP BY gender.District;
+
+-- Number of Males and Females in every State
+SELECT gender.State, ROUND(SUM(gender.Population/(gender.sex_ratio + 1)), 0) AS Males, ROUND(SUM(gender.sex_ratio * gender.Population/(gender.sex_ratio + 1)), 0) AS Females
+FROM (SELECT d1.District, d1.State, d1.Sex_Ratio/1000 AS sex_ratio, d2.Population
+FROM Data1 d1
+INNER JOIN Data2 d2
+ON d1.District = d2.District) gender
+GROUP BY gender.State;
+
+
+
+
+
+
+--------------- Which state has the highest Literacy_Rate?
+-- total_literate_people / population = literacy_rate(Literacy here)
+-- total_literate_people = literacy_rate/100 * population
+
+-- Number of literate_people in every District
+SELECT literate_people.District, ROUND(SUM(literate_people.literacy_rate*literate_people.Population), 0) AS literates, ROUND(SUM((1 - literate_people.literacy_rate) * literate_people.Population), 0) AS illiterates
+FROM (SELECT d1.District, d1.State, d1.Literacy/100 AS literacy_rate, d2.Population
+FROM Data1 d1
+INNER JOIN Data2 d2
+ON d1.District = d2.District) literate_people
+GROUP BY District;
+
+-- Number of literate_people in every State
+SELECT literate_people.State, ROUND(SUM(literate_people.literacy_rate*literate_people.Population), 0) AS literates, ROUND(SUM((1 - literate_people.literacy_rate) * literate_people.Population), 0) AS illiterates
+FROM (SELECT d1.District, d1.State, d1.Literacy/100 AS literacy_rate, d2.Population
+FROM Data1 d1
+INNER JOIN Data2 d2
+ON d1.District = d2.District) literate_people
+GROUP BY State;
+
+
+
+
+
+----------------------------------- What was the population count in the previous census?
+SELECT d1.District, d1.State, d1.Growth, d2.Population
+FROM Data1 d1
+INNER JOIN Data2 d2
+ON d1.District = d2.District;
+
+
+-- Now, current_population = previous_population + (growth_rate * previous_population)
+-- So, previous_population = current_population/(1 + growth_rate)
+
+-- Hence, previous_census_population for every District is...
+SELECT prev_pop.District AS district, SUM(prev_pop.Population) AS current_population, SUM(ROUND(prev_pop.Population/(1 + prev_pop.Growth),0)) AS previous_census_population
+FROM (SELECT d1.District, d1.State, d1.Growth, d2.Population
+FROM Data1 d1
+INNER JOIN Data2 d2
+ON d1.District = d2.District) prev_pop
+GROUP BY district;
+
+
+-- AND, previous_census_population for every District is...
+SELECT prev_pop.State AS state, SUM(prev_pop.Population) AS current_population, SUM(ROUND(prev_pop.Population/(1 + prev_pop.Growth),0)) AS previous_census_population
+FROM (SELECT d1.District, d1.State, d1.Growth, d2.Population
+FROM Data1 d1
+INNER JOIN Data2 d2
+ON d1.District = d2.District) prev_pop
+GROUP BY state;
+
+
+
+
+
+
+
+--------------------------- Output top 3 districts from each state with highest literacy rate
+-- Usage of Window Functions like RANK(), OVER(), and PARTITION BY comes into picture
+SELECT ranked_states.*
+FROM (SELECT District, State, Literacy,
+RANK() OVER(PARTITION BY State ORDER BY Literacy DESC) AS rankk
+FROM Data1) ranked_states
+-- WHERE rankk BETWEEN 1 AND 3;
+WHERE rankk IN (1,2,3);
